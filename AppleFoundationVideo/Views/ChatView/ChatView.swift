@@ -62,7 +62,7 @@ struct ChatView: View {
                 TextField("Message...", text: $viewModel.inputText, axis: .vertical)
                     .textInputAutocapitalization(.sentences)
                     .padding()
-                    .glassEffect(.regular.interactive())
+                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 26.5))
                     .glassEffectID("messagetextfield", in: namespace1)
                     .glassEffectTransition(.matchedGeometry)
                     .onChange(of: viewModel.inputText) { oldValue, newValue in
