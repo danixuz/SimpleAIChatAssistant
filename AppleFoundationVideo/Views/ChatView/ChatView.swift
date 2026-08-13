@@ -3,15 +3,21 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var isMessageTypedIn = false
+    @FocusState private var isInputFocused: Bool
     @Namespace var namespace1
     @Namespace var namespace2
     
     var body: some View {
         NavigationStack {
-            ZStack() {
+            ZStack {
                 if viewModel.messages.isEmpty {
                     SuggestionsView { suggestion in
+                        isInputFocused = false
                         viewModel.sendMessage(prompt: suggestion)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isInputFocused = false
                     }
                 } else {
                     messageListView
@@ -41,14 +47,30 @@ struct ChatView: View {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.messages) { message in
                         MessageBubble(message: message)
-                            .id(message.id)
                     }
+                    
+                    Color.clear
+                        .frame(height: 80)
+                        .id("bottom")
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.top)
             }
-            .onChange(of: viewModel.messages.last?.content) { _, _ in
-                if let lastId = viewModel.messages.last?.id {
-                    proxy.scrollTo(lastId, anchor: .bottom)
+            .scrollDismissesKeyboard(.interactively)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isInputFocused = false
+            }
+            .onChange(of: viewModel.messages.last?.content) {
+                withAnimation {
+                    proxy.scrollTo("bottom")
+                }
+            }
+            .onChange(of: isInputFocused) {
+                if isInputFocused {
+                    withAnimation {
+                        proxy.scrollTo("bottom")
+                    }
                 }
             }
         }
@@ -60,11 +82,16 @@ struct ChatView: View {
             Spacer()
             HStack(spacing: 8) {
                 TextField("Message...", text: $viewModel.inputText, axis: .vertical)
+                    .focused($isInputFocused)
                     .textInputAutocapitalization(.sentences)
                     .padding()
                     .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 26.5))
                     .glassEffectID("messagetextfield", in: namespace1)
                     .glassEffectTransition(.matchedGeometry)
+                    .onSubmit {
+                        isInputFocused = false
+                        viewModel.sendMessage()
+                    }
                     .onChange(of: viewModel.inputText) { oldValue, newValue in
                         withAnimation {
                             isMessageTypedIn = !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -73,16 +100,17 @@ struct ChatView: View {
 
                 if isMessageTypedIn || viewModel.isGenerating {
                     Button {
+                        isInputFocused = false
                         Task {
                             viewModel.sendMessage()
                         }
                     } label: {
                         Image(systemName: viewModel.isGenerating ? "stop" : "arrow.up")
-                                            .font(.system(size: 20))
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 20, height: 20)
-                                            .foregroundStyle(viewModel.canSend ? Color.accentColor : Color.gray.opacity(0.4))
-                                            .padding()
+                            .font(.system(size: 20))
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(viewModel.canSend ? Color.accentColor : Color.gray.opacity(0.4))
+                            .padding()
                     }
                     .glassEffect(.regular.interactive())
                     .glassEffectID("sendbutton", in: namespace1)
@@ -92,7 +120,6 @@ struct ChatView: View {
                 } else {
                     // TODO: Implement media sending support.
                     GlassEffectContainer {
-                        
                         Button {
                             // Add other attachement
                         } label: {
