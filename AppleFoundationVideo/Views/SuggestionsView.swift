@@ -4,9 +4,9 @@ struct SuggestionsView: View {
     var onSelectPrompt: (String) -> Void
     
     private let suggestions = [
-        "Explain quantum computing simply",
-        "Write a Swift function to reverse a string",
-        "Give me 3 easy dinner recipe ideas"
+        "Change the background to purple",
+        "Change the background to a random color",
+        "What's the weather in Tokyo?"
     ]
     
     var body: some View {
@@ -29,8 +29,8 @@ struct SuggestionsView: View {
                             .font(.subheadline)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .background(Color(.secondarySystemFill))
+                            .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                 }

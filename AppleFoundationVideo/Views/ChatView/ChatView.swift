@@ -16,6 +16,7 @@ struct ChatView: View {
                 
                 inputBar
             }
+            .background(viewModel.backgroundColor.ignoresSafeArea())
             .navigationTitle("AI Assistant")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -26,6 +27,7 @@ struct ChatView: View {
                     .disabled(viewModel.messages.isEmpty || viewModel.isGenerating)
                 }
             }
+            .scrollEdgeEffectStyle(.soft, for: .all)
         }
     }
     
