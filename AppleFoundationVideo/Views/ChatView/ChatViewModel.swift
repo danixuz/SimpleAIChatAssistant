@@ -9,6 +9,7 @@ final class ChatViewModel {
     var inputText: String = ""
     var isGenerating: Bool = false
     var backgroundColor: Color = Color(.systemBackground)
+    var currentColorName: String = "default"
     
     var canSend: Bool {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isGenerating
@@ -23,10 +24,35 @@ final class ChatViewModel {
             self?.updateBackgroundColor(name: color) ?? "default"
         }
         
+        let getCurrentColorTool = GetCurrentBackgroundColorTool { [weak self] in
+            self?.currentColorName ?? "default"
+        }
+        
         session = LanguageModelSession(
-            tools: [GetWeatherTool(), colorTool],
+            tools: [GetWeatherTool(), colorTool, getCurrentColorTool, CreateReminderTool()],
             instructions: "You are a friendly, intelligent, and versatile AI assistant. Answer questions naturally, hold everyday conversations, and assist with any topic. Only perform tool actions when the user explicitly requests them."
         )
+    }
+    
+    static let presetColors = [
+        "default", "blue", "purple", "pink", "red", "orange", "yellow", "green", "teal", "mint", "indigo", "gray"
+    ]
+    
+    static func previewColor(for name: String) -> Color {
+        switch name.lowercased() {
+        case "blue": return .blue
+        case "purple": return .purple
+        case "pink": return .pink
+        case "red": return .red
+        case "orange": return .orange
+        case "yellow": return .yellow
+        case "green": return .green
+        case "teal": return .teal
+        case "mint": return .mint
+        case "indigo": return .indigo
+        case "gray", "grey": return .gray
+        default: return Color(.secondarySystemBackground)
+        }
     }
     
     @MainActor
@@ -77,6 +103,7 @@ final class ChatViewModel {
         
         if cleanName == "random" || cleanName.isEmpty {
             let chosen = randomOptions.randomElement() ?? "purple"
+            self.currentColorName = chosen
             withAnimation(.easeInOut) {
                 self.backgroundColor = colorMap[chosen] ?? .purple.opacity(0.2)
             }
@@ -84,6 +111,7 @@ final class ChatViewModel {
         }
         
         if let matchedColor = colorMap[cleanName] {
+            self.currentColorName = cleanName
             withAnimation(.easeInOut) {
                 self.backgroundColor = matchedColor
             }
@@ -92,6 +120,7 @@ final class ChatViewModel {
         
         // Hex color fallback (e.g. #FF5733 or FF5733)
         if let hexColor = Color(hex: cleanName) {
+            self.currentColorName = cleanName
             withAnimation(.easeInOut) {
                 self.backgroundColor = hexColor.opacity(0.25)
             }
@@ -100,6 +129,7 @@ final class ChatViewModel {
         
         // Fallback for unmapped color names: choose random
         let fallback = randomOptions.randomElement() ?? "purple"
+        self.currentColorName = fallback
         withAnimation(.easeInOut) {
             self.backgroundColor = colorMap[fallback] ?? .purple.opacity(0.2)
         }
@@ -117,11 +147,23 @@ final class ChatViewModel {
         messages.append(ChatMessage(isUser: false, content: ""))
         isGenerating = true
         
+        let useTypingIndicator = UserDefaults.standard.object(forKey: "useTypingIndicator") as? Bool ?? true
+        
         Task {
             do {
                 let stream = session.streamResponse(to: textToSend)
-                for try await response in stream {
-                    messages[assistantIndex].content = response.content
+                if useTypingIndicator {
+                    var fullResponse = ""
+                    for try await response in stream {
+                        fullResponse = response.content
+                    }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        messages[assistantIndex].content = fullResponse
+                    }
+                } else {
+                    for try await response in stream {
+                        messages[assistantIndex].content = response.content
+                    }
                 }
             } catch {
                 messages[assistantIndex].content = "Error: \(error.localizedDescription)"
@@ -132,6 +174,7 @@ final class ChatViewModel {
     
     func resetChat() {
         setupSession()
+        currentColorName = "default"
         messages.removeAll()
         withAnimation(.easeInOut) {
             backgroundColor = Color(.systemBackground)

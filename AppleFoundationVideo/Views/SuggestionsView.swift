@@ -4,8 +4,8 @@ struct SuggestionsView: View {
     var onSelectPrompt: (String) -> Void
     
     private let suggestions = [
+        "Remind me to buy groceries",
         "Change the background to purple",
-        "Change the background to a random color",
         "What's the weather in Tokyo?"
     ]
     

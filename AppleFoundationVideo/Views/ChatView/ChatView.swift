@@ -3,6 +3,7 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var isMessageTypedIn = false
+    @State private var showSettings = false
     @FocusState private var isInputFocused: Bool
     @Namespace var namespace1
     @Namespace var namespace2
@@ -29,12 +30,23 @@ struct ChatView: View {
             .navigationTitle("AI Assistant")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: viewModel.resetChat) {
                         Image(systemName: "square.and.pencil")
                     }
                     .disabled(viewModel.messages.isEmpty || viewModel.isGenerating)
                 }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView(viewModel: viewModel)
             }
             .scrollEdgeEffectStyle(.soft, for: .all)
         }
