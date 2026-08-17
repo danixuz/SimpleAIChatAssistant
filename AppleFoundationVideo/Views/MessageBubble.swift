@@ -9,11 +9,19 @@ struct MessageBubble: View {
             if message.isUser {
                 Spacer(minLength: 40)
                 Text(message.content)
+                    .textSelection(.enabled)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(Color.blue)
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .contextMenu {
+                        Button {
+                            UIPasteboard.general.string = message.content
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
+                    }
             } else {
                 Image(systemName: "sparkles")
                     .foregroundStyle(.tint)
@@ -31,10 +39,18 @@ struct MessageBubble: View {
                         }
                     } else if !message.content.isEmpty {
                         Text(message.content)
+                            .textSelection(.enabled)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .contextMenu {
+                                Button {
+                                    UIPasteboard.general.string = message.content
+                                } label: {
+                                    Label("Copy", systemImage: "doc.on.doc")
+                                }
+                            }
                     } else {
                         if useTypingIndicator {
                             TypingIndicatorView()
