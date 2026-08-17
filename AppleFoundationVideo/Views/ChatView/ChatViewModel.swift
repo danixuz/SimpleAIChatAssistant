@@ -5,6 +5,10 @@ import FoundationModels
 final class ChatViewModel {
     private var session: LanguageModelSession!
     
+    var sessions: [ChatSession] = [ChatSession()]
+    var currentSessionId: UUID
+    var isSidebarOpen: Bool = false
+    
     var messages: [ChatMessage] = []
     var inputText: String = ""
     var isGenerating: Bool = false
@@ -16,6 +20,9 @@ final class ChatViewModel {
     }
     
     init() {
+        let initialSession = ChatSession()
+        self.sessions = [initialSession]
+        self.currentSessionId = initialSession.id
         setupSession()
     }
     
@@ -28,10 +35,71 @@ final class ChatViewModel {
             self?.currentColorName ?? "default"
         }
         
+        let quizTool = GenerateQuizTool { [weak self] quiz in
+            self?.attachCard(.quiz(quiz))
+        }
+        
+        let workoutTool = GenerateWorkoutTool { [weak self] workout in
+            self?.attachCard(.workout(workout))
+        }
+        
+        let recipeTool = GenerateRecipeTool { [weak self] recipe in
+            self?.attachCard(.recipe(recipe))
+        }
+        
         session = LanguageModelSession(
-            tools: [GetWeatherTool(), colorTool, getCurrentColorTool, CreateReminderTool()],
+            tools: [
+                GetWeatherTool(),
+                colorTool,
+                getCurrentColorTool,
+                CreateReminderTool(),
+                quizTool,
+                workoutTool,
+                recipeTool
+            ],
             instructions: "You are a friendly, intelligent, and versatile AI assistant. Answer questions naturally, hold everyday conversations, and assist with any topic. Only perform tool actions when the user explicitly requests them."
         )
+    }
+    
+    // MARK: - Multi-Session Management
+    func createNewChat() {
+        let newSession = ChatSession()
+        sessions.insert(newSession, at: 0)
+        currentSessionId = newSession.id
+        messages = []
+        setupSession()
+    }
+    
+    func selectSession(id: UUID) {
+        guard let selected = sessions.first(where: { $0.id == id }) else { return }
+        currentSessionId = id
+        messages = selected.messages
+        setupSession()
+    }
+    
+    func deleteSession(id: UUID) {
+        sessions.removeAll(where: { $0.id == id })
+        if sessions.isEmpty {
+            createNewChat()
+        } else if currentSessionId == id {
+            selectSession(id: sessions[0].id)
+        }
+    }
+    
+    private func syncCurrentSession() {
+        if let index = sessions.firstIndex(where: { $0.id == currentSessionId }) {
+            sessions[index].messages = messages
+        }
+    }
+    
+    @MainActor
+    private func attachCard(_ card: GeneratedCard) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            if let lastIndex = messages.indices.last, !messages[lastIndex].isUser {
+                messages[lastIndex].card = card
+                syncCurrentSession()
+            }
+        }
     }
     
     static let presetColors = [
@@ -140,8 +208,14 @@ final class ChatViewModel {
         let textToSend = prompt ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !textToSend.isEmpty, !isGenerating else { return }
         
+        // Auto-update session title on first message
+        if let index = sessions.firstIndex(where: { $0.id == currentSessionId }), sessions[index].messages.isEmpty {
+            sessions[index].title = String(textToSend.prefix(28))
+        }
+        
         inputText = ""
         messages.append(ChatMessage(isUser: true, content: textToSend))
+        syncCurrentSession()
         
         let assistantIndex = messages.count
         messages.append(ChatMessage(isUser: false, content: ""))
@@ -159,23 +233,24 @@ final class ChatViewModel {
                     }
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         messages[assistantIndex].content = fullResponse
+                        syncCurrentSession()
                     }
                 } else {
                     for try await response in stream {
                         messages[assistantIndex].content = response.content
+                        syncCurrentSession()
                     }
                 }
             } catch {
                 messages[assistantIndex].content = "Error: \(error.localizedDescription)"
+                syncCurrentSession()
             }
             isGenerating = false
         }
     }
     
     func resetChat() {
-        setupSession()
-        currentColorName = "default"
-        messages.removeAll()
+        createNewChat()
         withAnimation(.easeInOut) {
             backgroundColor = Color(.systemBackground)
         }

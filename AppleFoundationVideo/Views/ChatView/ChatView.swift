@@ -3,53 +3,98 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var isMessageTypedIn = false
-    @State private var showSettings = false
     @FocusState private var isInputFocused: Bool
     @Namespace var namespace1
     @Namespace var namespace2
     
+    private let sidebarWidth: CGFloat = 310
+    
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if viewModel.messages.isEmpty {
-                    SuggestionsView { suggestion in
-                        isInputFocused = false
-                        viewModel.sendMessage(prompt: suggestion)
+        ZStack(alignment: .leading) {
+            // MARK: - Main Chat View
+            NavigationStack {
+                ZStack {
+                    if viewModel.messages.isEmpty {
+                        SuggestionsView { suggestion in
+                            isInputFocused = false
+                            viewModel.sendMessage(prompt: suggestion)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isInputFocused = false
+                        }
+                    } else {
+                        messageListView
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        isInputFocused = false
-                    }
-                } else {
-                    messageListView
+                    
+                    inputBar
                 }
-                
-                inputBar
-            }
-            .background(viewModel.backgroundColor.ignoresSafeArea())
-            .navigationTitle("AI Assistant")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
+                .background(viewModel.backgroundColor.ignoresSafeArea())
+                .navigationTitle("AI Assistant")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            isInputFocused = false
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                viewModel.isSidebarOpen.toggle()
+                            }
+                        } label: {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 18, weight: .medium))
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            isInputFocused = false
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                viewModel.createNewChat()
+                            }
+                        } label: {
+                            Image(systemName: "square.and.pencil")
+                        }
                     }
                 }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: viewModel.resetChat) {
-                        Image(systemName: "square.and.pencil")
+                .scrollEdgeEffectStyle(.soft, for: .all)
+            }
+            
+            // MARK: - Dimming Backdrop
+            Color.black
+                .opacity(viewModel.isSidebarOpen ? 0.4 : 0)
+                .ignoresSafeArea()
+                .allowsHitTesting(viewModel.isSidebarOpen)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        viewModel.isSidebarOpen = false
                     }
-                    .disabled(viewModel.messages.isEmpty || viewModel.isGenerating)
                 }
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsView(viewModel: viewModel)
-            }
-            .scrollEdgeEffectStyle(.soft, for: .all)
+            
+            // MARK: - Slide-Out Sidebar Drawer
+            SidebarView(viewModel: viewModel)
+                .frame(width: sidebarWidth)
+                .offset(x: viewModel.isSidebarOpen ? 0 : -(sidebarWidth + 20))
+                .shadow(color: .black.opacity(viewModel.isSidebarOpen ? 0.3 : 0), radius: 25, x: 8, y: 0)
+                .ignoresSafeArea(.container, edges: .vertical)
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.isSidebarOpen)
+        .gesture(
+            DragGesture()
+                .onEnded { value in
+                    if value.translation.width > 60 && value.startLocation.x < 50 {
+                        // Swipe from left edge to open
+                        isInputFocused = false
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                            viewModel.isSidebarOpen = true
+                        }
+                    } else if value.translation.width < -60 && viewModel.isSidebarOpen {
+                        // Swipe left to close
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                            viewModel.isSidebarOpen = false
+                        }
+                    }
+                }
+        )
     }
     
     // MARK: - Message List View
