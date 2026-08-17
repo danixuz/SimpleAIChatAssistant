@@ -29,7 +29,12 @@ struct ChatView: View {
                     
                     inputBar
                 }
-                .background(viewModel.backgroundColor.ignoresSafeArea())
+                .background(
+                    GeminiGlowBackgroundView(
+                        isGenerating: viewModel.isGenerating,
+                        baseColor: viewModel.backgroundColor
+                    )
+                )
                 .navigationTitle("AI Assistant")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
