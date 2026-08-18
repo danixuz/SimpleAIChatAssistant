@@ -47,9 +47,12 @@ final class ChatViewModel {
             self?.attachCard(.recipe(recipe))
         }
         
+        let today = Date.now.formatted(date: .complete, time: .shortened)
+        
         session = LanguageModelSession(
             tools: [
                 GetWeatherTool(),
+                SearchWebTool(),
                 colorTool,
                 getCurrentColorTool,
                 CreateReminderTool(),
@@ -57,7 +60,7 @@ final class ChatViewModel {
                 workoutTool,
                 recipeTool
             ],
-            instructions: "You are a friendly, intelligent, and versatile AI assistant. Answer questions naturally, hold everyday conversations, and assist with any topic. Only perform tool actions when the user explicitly requests them."
+            instructions: "You are a friendly, intelligent, and versatile AI assistant. Today's current date and time is \(today). Answer questions naturally, hold everyday conversations, and assist with any topic. Use your searchWeb tool whenever the user asks for real-time information, news, media, games, or web knowledge."
         )
     }
     
