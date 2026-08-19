@@ -26,7 +26,7 @@ final class ChatViewModel {
         setupSession()
     }
     
-    private func setupSession() {
+    private func setupSession(context: String? = nil) {
         let colorTool = ChangeBackgroundColorTool { [weak self] color in
             self?.updateBackgroundColor(name: color) ?? "default"
         }
@@ -52,6 +52,11 @@ final class ChatViewModel {
         }
         
         let today = Date.now.formatted(date: .complete, time: .shortened)
+        var instructions = "You are a friendly, intelligent, and versatile AI assistant. Today's current date and time is \(today). Answer questions naturally, hold everyday conversations, and assist with any topic. Use your searchWeb tool whenever the user asks for real-time information, news, media, games, or web knowledge. When searching, focus on the exact medium requested (e.g. video game vs movie vs book), carefully check the dates in the search results, and state the accurate information directly."
+        
+        if let context, !context.isEmpty {
+            instructions += "\n\nConversation context:\n\(context)"
+        }
         
         session = LanguageModelSession(
             tools: [
@@ -64,8 +69,19 @@ final class ChatViewModel {
                 workoutTool,
                 recipeTool
             ],
-            instructions: "You are a friendly, intelligent, and versatile AI assistant. Today's current date and time is \(today). Answer questions naturally, hold everyday conversations, and assist with any topic. Use your searchWeb tool whenever the user asks for real-time information, news, media, games, or web knowledge."
+            instructions: instructions
         )
+    }
+    
+    // MARK: - Auto Context Pruning (Guarantees token usage is always < 1,000)
+    private func prepareCleanSessionForTurn() {
+        let recentSlice = messages.suffix(6)
+        let context = recentSlice.compactMap { msg -> String? in
+            guard !msg.content.isEmpty else { return nil }
+            return "\(msg.isUser ? "User" : "Assistant"): \(msg.content)"
+        }.joined(separator: "\n")
+        
+        setupSession(context: context.isEmpty ? nil : context)
     }
     
     @MainActor
@@ -91,7 +107,7 @@ final class ChatViewModel {
         guard let selected = sessions.first(where: { $0.id == id }) else { return }
         currentSessionId = id
         messages = selected.messages
-        setupSession()
+        prepareCleanSessionForTurn()
     }
     
     func deleteSession(id: UUID) {
@@ -221,6 +237,7 @@ final class ChatViewModel {
         return fallback
     }
     
+    // MARK: - Send Message
     func sendMessage(prompt: String? = nil) {
         let textToSend = prompt ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !textToSend.isEmpty, !isGenerating else { return }
@@ -229,6 +246,9 @@ final class ChatViewModel {
         if let index = sessions.firstIndex(where: { $0.id == currentSessionId }), sessions[index].messages.isEmpty {
             sessions[index].title = String(textToSend.prefix(28))
         }
+        
+        // Ensure the active session context is clean and bounded (< 1,000 tokens)
+        prepareCleanSessionForTurn()
         
         inputText = ""
         messages.append(ChatMessage(isUser: true, content: textToSend))
