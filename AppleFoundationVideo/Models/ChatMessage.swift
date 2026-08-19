@@ -5,4 +5,5 @@ struct ChatMessage: Identifiable, Equatable {
     let isUser: Bool
     var content: String
     var card: GeneratedCard? = nil
+    var isSearching: Bool = false
 }

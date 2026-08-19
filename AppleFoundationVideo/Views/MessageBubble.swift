@@ -8,7 +8,7 @@ struct MessageBubble: View {
         HStack(alignment: .top, spacing: 8) {
             if message.isUser {
                 Spacer(minLength: 40)
-                Text(message.content)
+                Text(LocalizedStringKey(message.content))
                     .textSelection(.enabled)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -38,7 +38,7 @@ struct MessageBubble: View {
                             RecipeCardView(recipe: recipe)
                         }
                     } else if !message.content.isEmpty {
-                        Text(message.content)
+                        Text(LocalizedStringKey(message.content))
                             .textSelection(.enabled)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
@@ -52,7 +52,19 @@ struct MessageBubble: View {
                                 }
                             }
                     } else {
-                        if useTypingIndicator {
+                        if message.isSearching {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Searching...")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                        } else if useTypingIndicator {
                             TypingIndicatorView()
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 10)

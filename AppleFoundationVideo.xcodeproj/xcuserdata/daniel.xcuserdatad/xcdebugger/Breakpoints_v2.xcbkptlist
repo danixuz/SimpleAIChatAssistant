@@ -18,6 +18,36 @@
             endingLineNumber = "30"
             landmarkName = "call(arguments:)"
             landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "943C79DC-B8A6-4682-8F1F-12163E4AFD39 - 88f3bb9461a6bb41"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "AppleFoundationVideo.SearchWebTool.call(arguments: AppleFoundationVideo.SearchWebTool.Arguments) async throws -&gt; some"
+                  moduleName = "AppleFoundationVideo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/daniel/Developer/AppleFoundationVideo/AppleFoundationVideo/Tools/SearchWebTool.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "30"
+                  endingLineNumber = "30">
+               </Location>
+               <Location
+                  uuid = "943C79DC-B8A6-4682-8F1F-12163E4AFD39 - 32fe7a27e3a6ee7c"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(2) suspend resume partial function for AppleFoundationVideo.SearchWebTool.call(arguments: AppleFoundationVideo.SearchWebTool.Arguments) async throws -&gt; some"
+                  moduleName = "AppleFoundationVideo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/daniel/Developer/AppleFoundationVideo/AppleFoundationVideo/Tools/SearchWebTool.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "30"
+                  endingLineNumber = "30">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

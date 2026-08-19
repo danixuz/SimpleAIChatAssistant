@@ -11,7 +11,20 @@ struct SearchWebTool: Tool {
         var query: String
     }
     
+    let onSearchStateChange: (@MainActor (Bool) -> Void)?
+    
+    init(onSearchStateChange: (@MainActor (Bool) -> Void)? = nil) {
+        self.onSearchStateChange = onSearchStateChange
+    }
+    
     func call(arguments: Arguments) async throws -> some PromptRepresentable {
+        await onSearchStateChange?(true)
+        defer {
+            Task { @MainActor in
+                onSearchStateChange?(false)
+            }
+        }
+        
         let cleanQuery = arguments.query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let encoded = cleanQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             return "Could not search the web for '\(cleanQuery)'."

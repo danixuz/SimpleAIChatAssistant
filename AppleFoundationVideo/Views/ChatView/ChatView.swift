@@ -202,7 +202,7 @@ struct ChatView: View {
             }
             .animation(.default, value: isInputFocused)
             .padding(.horizontal)
-            .padding(.bottom, isInputFocused ? 10 : 0)
+            .padding(.bottom, isInputFocused ? 10 : 5)
         }
     }
 }

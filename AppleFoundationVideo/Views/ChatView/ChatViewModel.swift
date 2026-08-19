@@ -47,12 +47,16 @@ final class ChatViewModel {
             self?.attachCard(.recipe(recipe))
         }
         
+        let searchTool = SearchWebTool { [weak self] isSearching in
+            self?.updateSearchingState(isSearching)
+        }
+        
         let today = Date.now.formatted(date: .complete, time: .shortened)
         
         session = LanguageModelSession(
             tools: [
                 GetWeatherTool(),
-                SearchWebTool(),
+                searchTool,
                 colorTool,
                 getCurrentColorTool,
                 CreateReminderTool(),
@@ -62,6 +66,16 @@ final class ChatViewModel {
             ],
             instructions: "You are a friendly, intelligent, and versatile AI assistant. Today's current date and time is \(today). Answer questions naturally, hold everyday conversations, and assist with any topic. Use your searchWeb tool whenever the user asks for real-time information, news, media, games, or web knowledge."
         )
+    }
+    
+    @MainActor
+    private func updateSearchingState(_ isSearching: Bool) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            if let lastIndex = messages.indices.last, !messages[lastIndex].isUser {
+                messages[lastIndex].isSearching = isSearching
+                syncCurrentSession()
+            }
+        }
     }
     
     // MARK: - Multi-Session Management
